@@ -1,15 +1,9 @@
 /** @type {import('next').NextConfig} */
-const repoBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ""
-const normalizedBase = repoBasePath
-  ? `/${repoBasePath.replace(/^\/+/, "").replace(/\/+$/, "")}`
-  : ""
-
+// Force no basePath/assetPrefix so `/` works on Vercel even if env vars are set.
 const nextConfig = {
-  // Enable static export for GitHub Pages
-  // output: "export",
   trailingSlash: true,
-  basePath: normalizedBase || undefined,
-  assetPrefix: normalizedBase || undefined,
+  basePath: undefined,
+  assetPrefix: undefined,
   images: {
     unoptimized: true,
   },
