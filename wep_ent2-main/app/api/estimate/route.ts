@@ -92,6 +92,10 @@ function estimateAll(data: any) {
   };
 }
 
+export async function GET() {
+  return NextResponse.json({ message: 'API is working' });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
