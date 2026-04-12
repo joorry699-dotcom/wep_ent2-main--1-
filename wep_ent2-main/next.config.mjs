@@ -10,6 +10,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/estimate/',
+        destination: '/api/estimate',
+      },
+    ];
+  },
 }
 
 export default nextConfig
