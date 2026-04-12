@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 // Force no basePath/assetPrefix so `/` works on Vercel even if env vars are set.
 const nextConfig = {
-  trailingSlash: true,
+  trailingSlash: false,
   basePath: undefined,
   assetPrefix: undefined,
   images: {
