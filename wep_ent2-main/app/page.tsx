@@ -69,7 +69,7 @@ export default function HomePage() {
     setError('');
     setResults(null);
     try {
-      const res = await fetch('/api/estimate/', {
+      const res = await fetch('/api/estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

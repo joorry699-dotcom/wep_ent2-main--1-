@@ -236,7 +236,7 @@ export async function GET() {
   return NextResponse.json({
     message: 'Unified Reach Estimator API v2.0',
     endpoints: {
-      POST: '/api/estimate/',
+      POST: '/api/estimate',
       description: 'Multi-platform reach estimation with concurrent calls'
     },
     supported_platforms: ['google', 'meta', 'snapchat', 'tiktok'],
