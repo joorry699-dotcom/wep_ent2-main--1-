@@ -1,40 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-function fakePlatformData() {
+// ==================
+// ML LOGIC (NUMERIC)
+// ==================
+
+function getFakePlatformData() {
   return {
-    google: {
-      estimated_reach: 1500000,
-      estimated_impressions: 5000000,
-    },
-    meta: {
-      estimated_reach: 2000000,
-      estimated_impressions: 6500000,
-    },
-    snapchat: {
-      estimated_reach: 900000,
-      estimated_impressions: 3000000,
-    },
+    google: { estimated_reach: 1500000, estimated_impressions: 5000000, platform: 'google' },
+    meta: { estimated_reach: 2000000, estimated_impressions: 6500000, platform: 'meta' },
+    snapchat: { estimated_reach: 900000, estimated_impressions: 3000000, platform: 'snapchat' },
   };
 }
 
 function predictMetrics(platform: string, interests: string[], age: number, budget: number) {
-  let baseCtr = 0.02;
-  let baseEng = 0.03;
+  // Simulate ML model based on platform and interests
+  let ctr = 0.02;
+  let engagement = 0.03;
 
   if (platform === 'meta') {
-    baseCtr += 0.01;
-    baseEng += 0.02;
+    ctr += 0.01;
+    engagement += 0.02;
   } else if (platform === 'google') {
-    baseCtr += 0.005;
+    ctr += 0.005;
   }
 
+  // Boost for gaming interest
   if (interests.includes('gaming')) {
-    baseCtr += 0.01;
+    ctr += 0.01;
   }
+
+  // Age factor
+  const ageFactor = (60 - age) / 60;
+  ctr *= (0.8 + ageFactor * 0.4);
+  engagement *= (0.7 + ageFactor * 0.5);
 
   return {
-    predicted_ctr: Math.round(baseCtr * 10000) / 10000,
-    predicted_engagement: Math.round(baseEng * 10000) / 10000,
+    predicted_ctr: Math.round(ctr * 10000) / 10000,
+    predicted_engagement: Math.round(engagement * 10000) / 10000,
   };
 }
 
@@ -43,25 +45,24 @@ function calculateCpm(impressions: number, budget: number) {
 }
 
 function recommendPlatforms(data: any, budget: number) {
-  const scores: { [key: string]: number } = {};
-
+  const scores: Record<string, number> = {};
   const maxReach = Math.max(...Object.values(data).map((p: any) => p.estimated_reach));
   const maxImpr = Math.max(...Object.values(data).map((p: any) => p.estimated_impressions));
 
-  for (const [p, d] of Object.entries(data) as [string, any][]) {
-    const reachScore = d.estimated_reach / maxReach;
-    const imprScore = d.estimated_impressions / maxImpr;
-    const cpm = calculateCpm(d.estimated_impressions, budget);
+  for (const [platform, platformData] of Object.entries(data) as [string, any][]) {
+    const reachScore = platformData.estimated_reach / maxReach;
+    const imprScore = platformData.estimated_impressions / maxImpr;
+    const cpm = calculateCpm(platformData.estimated_impressions, budget);
     const efficiency = 1 / (cpm + 1);
 
-    scores[p] = reachScore * 0.4 + imprScore * 0.3 + efficiency * 0.3;
+    scores[platform] = reachScore * 0.4 + imprScore * 0.3 + efficiency * 0.3;
   }
 
   const total = Object.values(scores).reduce((a, b) => a + b, 0);
+  const allocation: Record<string, number> = {};
 
-  const allocation: { [key: string]: number } = {};
-  for (const [p, s] of Object.entries(scores)) {
-    allocation[p] = total > 0 ? Math.round((s / total) * budget * 100) / 100 : 0;
+  for (const [platform, score] of Object.entries(scores)) {
+    allocation[platform] = total > 0 ? Math.round((score / total) * budget * 100) / 100 : 0;
   }
 
   return {
@@ -72,12 +73,12 @@ function recommendPlatforms(data: any, budget: number) {
 }
 
 function estimateAll(data: any) {
-  const reach = fakePlatformData();
+  const reach = getFakePlatformData();
 
-  for (const platform in reach) {
+  for (const platform of Object.keys(reach)) {
     const preds = predictMetrics(
       platform,
-      data.interests || [],
+      data.interests || ['technology', 'gaming'],
       data.age_min || 25,
       data.budget_usd || 100
     );
@@ -92,8 +93,18 @@ function estimateAll(data: any) {
   };
 }
 
+// ==================
+// API ROUTES
+// ==================
+
 export async function GET() {
-  return NextResponse.json({ message: 'API is working' });
+  return NextResponse.json({
+    message: 'AdReach Estimator API v1.0',
+    endpoints: {
+      POST: '/api/estimate/',
+      description: 'Send budget_usd, age_min, interests to estimate reach'
+    }
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -102,6 +113,9 @@ export async function POST(request: NextRequest) {
     const result = estimateAll(data);
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid request. Send JSON with budget_usd, age_min, interests.' },
+      { status: 400 }
+    );
   }
 }
